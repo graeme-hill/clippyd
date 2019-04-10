@@ -6,6 +6,7 @@ extern crate clipboard;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
 use std::io::Read;
+use rocket::config::{Config, Environment};
 
 #[post("/set_clipboard_content", data = "<content>")]
 fn set_clipboard_content(content: rocket::Data) {
@@ -13,7 +14,7 @@ fn set_clipboard_content(content: rocket::Data) {
     let mut buffer = String::new();
     match req_stream.read_to_string(&mut buffer) {
         Err(_) => {
-            // probably just log an error here
+            // todo: log an error
         },
         Ok(_) => {
             let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
@@ -24,5 +25,17 @@ fn set_clipboard_content(content: rocket::Data) {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![set_clipboard_content]).launch();
+    let config = Config::build(Environment::Staging)
+        .address("0.0.0.0")
+        .port(36912)
+        .finalize();
+
+    match config {
+        Ok(c) => {
+            rocket::custom(c).mount("/", routes![set_clipboard_content]).launch();
+        },
+        Err(_) => {
+            // todo: log an error
+        }
+    };
 }
